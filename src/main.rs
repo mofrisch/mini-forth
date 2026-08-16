@@ -16,12 +16,7 @@ impl Vm {
         self.data_stack.pop().ok_or("stack underflow")
     }
 
-    pub fn eval_token(&mut self, token: &str) -> Result<(), &'static str> {
-        let value: i64 = token.parse().map_err(|_| "unknown token")?;
-        self.push(value);
-        Ok(())
-    }
-
+    
     fn eval(&mut self, input: &str) -> Result<(), &'static str> {
         for token in input.split_whitespace() {
             match token {
@@ -29,6 +24,12 @@ impl Vm {
                     let b = self.pop()?;
                     let a = self.pop()?;
                     self.push(a + b);
+                }
+
+                "-" => {
+                    let b = self.pop()?;
+                    let a = self.pop()?;
+                    self.push(a - b);
                 }
 
                 token => {
@@ -68,7 +69,7 @@ mod tests {
     fn eval_positive_integer_token() {
         let mut vm = Vm::new();
 
-        assert_eq!(vm.eval_token("42"), Ok(()));
+        assert_eq!(vm.eval("42"), Ok(()));
         assert_eq!(vm.pop(), Ok(42));
     }
 
@@ -76,7 +77,7 @@ mod tests {
     fn eval_negative_integer_token() {
         let mut vm = Vm::new();
 
-        assert_eq!(vm.eval_token("-7"), Ok(()));
+        assert_eq!(vm.eval("-7"), Ok(()));
         assert_eq!(vm.pop(), Ok(-7));
     }
 
@@ -84,7 +85,7 @@ mod tests {
     fn eval_unknown_token() {
         let mut vm = Vm::new();
 
-        assert_eq!(vm.eval_token("hello"), Err("unknown token"));
+        assert_eq!(vm.eval("hello"), Err("unknown word"));
         assert_eq!(vm.pop(), Err("stack underflow"));
     }
 
@@ -95,6 +96,15 @@ mod tests {
         vm.eval("20 22 +").unwrap();
 
         assert_eq!(vm.pop().unwrap(), 42);
+    }
+
+    #[test]
+    fn evaluates_subtraction() {
+        let mut vm = Vm::new();
+
+        vm.eval("20 12 -").unwrap();
+
+        assert_eq!(vm.pop().unwrap(), 8);
     }
 
     #[test]
