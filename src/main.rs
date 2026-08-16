@@ -15,6 +15,12 @@ impl Vm {
     pub fn pop(&mut self) -> Result<i64, &'static str> {
         self.data_stack.pop().ok_or("stack underflow")
     }
+
+    pub fn eval_token(&mut self, token: &str) -> Result<(), &'static str> {
+        let value: i64 = token.parse().map_err(|_| "unknown token")?;
+        self.push(value);
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -36,6 +42,30 @@ mod tests {
     fn stack_underflow() {
         let mut vm = Vm::new();
 
+        assert_eq!(vm.pop(), Err("stack underflow"));
+    }
+
+    #[test]
+    fn eval_positive_integer_token() {
+        let mut vm = Vm::new();
+
+        assert_eq!(vm.eval_token("42"), Ok(()));
+        assert_eq!(vm.pop(), Ok(42));
+    }
+
+    #[test]
+    fn eval_negative_integer_token() {
+        let mut vm = Vm::new();
+
+        assert_eq!(vm.eval_token("-7"), Ok(()));
+        assert_eq!(vm.pop(), Ok(-7));
+    }
+
+    #[test]
+    fn eval_unknown_token() {
+        let mut vm = Vm::new();
+
+        assert_eq!(vm.eval_token("hello"), Err("unknown token"));
         assert_eq!(vm.pop(), Err("stack underflow"));
     }
 }
