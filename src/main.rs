@@ -21,6 +21,25 @@ impl Vm {
         self.push(value);
         Ok(())
     }
+
+    fn eval(&mut self, input: &str) -> Result<(), &'static str> {
+        for token in input.split_whitespace() {
+            match token {
+                "+" => {
+                    let b = self.pop()?;
+                    let a = self.pop()?;
+                    self.push(a + b);
+                }
+
+                token => {
+                    let value = token.parse::<i64>().map_err(|_| "unknown word")?;
+                    self.push(value);
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -68,14 +87,30 @@ mod tests {
         assert_eq!(vm.eval_token("hello"), Err("unknown token"));
         assert_eq!(vm.pop(), Err("stack underflow"));
     }
+
+    #[test]
+    fn evaluates_addition() {
+        let mut vm = Vm::new();
+
+        vm.eval("20 22 +").unwrap();
+
+        assert_eq!(vm.pop().unwrap(), 42);
+    }
+
+    #[test]
+    fn evaluates_multiple_operations() {
+        let mut vm = Vm::new();
+
+        vm.eval("10 20 + 12 +").unwrap();
+
+        assert_eq!(vm.pop().unwrap(), 42);
+    }
 }
 
 fn main() {
     let mut vm = Vm::new();
-    vm.push(10);
-    vm.push(20);
 
-    if let Ok(value) = vm.pop() {
-        println!("{value}");
-    }
+    vm.eval("20 22 +").unwrap();
+
+    println!("{:?}", vm.data_stack);
 }
