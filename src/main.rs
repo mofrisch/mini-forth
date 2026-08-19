@@ -1,3 +1,5 @@
+use std::io::{self, BufRead, Write};
+
 #[derive(Debug, Default, Clone)]
 pub struct Vm {
     data_stack: Vec<i64>,
@@ -22,6 +24,14 @@ impl Vm {
 
     fn output(&self) -> &str {
         &self.output
+    }
+
+    pub fn eval_line(&mut self, line: &str) -> Result<(), &'static str> {
+        for token in line.split_whitespace() {
+            self.eval_token(token)?;
+        }
+
+        Ok(())
     }
 
     pub fn eval_token(&mut self, token: &str) -> Result<(), &'static str> {
@@ -151,14 +161,46 @@ mod tests {
 
         assert_eq!(vm.eval_token("."), Err("stack underflow"));
     }
+
+    #[test]
+    fn eval_line_processes_multiple_tokens() {
+        let mut vm = Vm::new();
+
+        vm.eval_line("20 22 + .").unwrap();
+
+        assert_eq!(vm.output(), "42 ");
+        assert_eq!(vm.pop(), Err("stack underflow"));
+    }
 }
 
 fn main() {
+    let stdin = io::stdin();
     let mut vm = Vm::new();
 
-    vm.eval_token("20").unwrap();
-    vm.eval_token("22").unwrap();
-    vm.eval_token("+").unwrap();
+    println!("mini-forth v0.1");
 
-    println!("{:?}", vm.data_stack);
+    for line in stdin.lock().lines() {
+        let line = line.expect("failed to read input");
+        let trimmed = line.trim();
+
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        if trimmed == "quit" || trimmed == "exit" {
+            break;
+        }
+
+        if let Err(err) = vm.eval_line(trimmed) {
+            eprintln!("{err}");
+            continue;
+        }
+
+        if !vm.output.is_empty() {
+            print!("{}", vm.output);
+            io::stdout().flush().unwrap();
+            vm.output.clear();
+            println!();
+        }
+    }
 }
