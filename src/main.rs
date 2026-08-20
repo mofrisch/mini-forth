@@ -173,6 +173,8 @@ mod tests {
     }
 }
 
+
+
 fn main() {
     let stdin = io::stdin();
     let mut vm = Vm::new();
